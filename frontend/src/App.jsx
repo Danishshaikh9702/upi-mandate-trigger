@@ -10,6 +10,56 @@ const PAGES = [
 ];
 
 const DASHBOARD = "https://prod.zype.co.in/api/v1/dashboard/";
+const COPIED_KEY = "upi-copied-batches";
+
+function copiedId(kind, file) {
+  return `${kind}:${file}`;
+}
+
+function wasCopied(kind, file) {
+  try {
+    return JSON.parse(localStorage.getItem(COPIED_KEY) || "[]").includes(copiedId(kind, file));
+  } catch {
+    return false;
+  }
+}
+
+function rememberCopied(kind, file) {
+  const id = copiedId(kind, file);
+  let items = [];
+  try {
+    items = JSON.parse(localStorage.getItem(COPIED_KEY) || "[]");
+  } catch {
+    items = [];
+  }
+  if (!items.includes(id)) {
+    items.push(id);
+  }
+  localStorage.setItem(COPIED_KEY, JSON.stringify(items));
+}
+
+function CopyWarn({ file, onCancel, onConfirm }) {
+  return (
+    <div className="modal-back" role="dialog" aria-modal="true">
+      <div className="modal">
+        <p className="eyebrow">Already copied</p>
+        <h3>Do you want to copy {file} again?</h3>
+        <p>
+          You already copied this file. Please check whether you already ran this job on the dashboard before copying
+          again.
+        </p>
+        <div className="actions">
+          <button type="button" className="secondary" onClick={onCancel}>
+            Cancel
+          </button>
+          <button type="button" className="primary" onClick={onConfirm}>
+            Copy anyway
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const [page, setPage] = useState("overview");
@@ -141,6 +191,7 @@ function RunPanel({ kind, status, onDone }) {
   const [notice, setNotice] = useState("");
   const [openBatch, setOpenBatch] = useState(null);
   const [copied, setCopied] = useState("");
+  const [copyWarn, setCopyWarn] = useState(null);
 
   useEffect(() => {
     setExcelName(status?.excelFile || "");
@@ -184,13 +235,19 @@ function RunPanel({ kind, status, onDone }) {
     }
   }
 
-  async function copyJson(batchKind, file) {
+  async function copyJson(batchKind, file, { force = false } = {}) {
     setError("");
+    if (!force && wasCopied(batchKind, file)) {
+      setCopyWarn({ kind: batchKind, file });
+      return;
+    }
     try {
       const data = await api.batch(batchKind, file);
       setOpenBatch(data);
       await navigator.clipboard.writeText(JSON.stringify(data.payload, null, 4));
+      rememberCopied(batchKind, file);
       setCopied(`Copied ${file}. Paste it into the dashboard.`);
+      setCopyWarn(null);
     } catch (exc) {
       setError(exc.message);
     }
@@ -290,6 +347,13 @@ function RunPanel({ kind, status, onDone }) {
           )}
         </div>
       )}
+      {copyWarn && (
+        <CopyWarn
+          file={copyWarn.file}
+          onCancel={() => setCopyWarn(null)}
+          onConfirm={() => copyJson(copyWarn.kind, copyWarn.file, { force: true })}
+        />
+      )}
     </section>
   );
 }
@@ -299,6 +363,7 @@ function Batches({ status }) {
   const [files, setFiles] = useState([]);
   const [selected, setSelected] = useState(null);
   const [copied, setCopied] = useState("");
+  const [copyWarn, setCopyWarn] = useState(null);
 
   async function load(nextKind = kind) {
     const data = await api.batches(nextKind);
@@ -316,18 +381,23 @@ function Batches({ status }) {
     setCopied("");
   }
 
-  async function copyFile(file) {
+  async function copyFile(file, { force = false } = {}) {
     if (!file.endsWith(".json")) return;
+    if (!force && wasCopied(kind, file)) {
+      setCopyWarn(file);
+      return;
+    }
     const data = await api.batch(kind, file);
     setSelected(data);
     await navigator.clipboard.writeText(JSON.stringify(data.payload, null, 4));
+    rememberCopied(kind, file);
     setCopied(`Copied ${file}`);
+    setCopyWarn(null);
   }
 
   async function copyPayload() {
-    if (!selected?.payload) return;
-    await navigator.clipboard.writeText(JSON.stringify(selected.payload, null, 4));
-    setCopied(`Copied ${selected.file}`);
+    if (!selected?.file) return;
+    await copyFile(selected.file);
   }
 
   return (
@@ -393,6 +463,13 @@ function Batches({ status }) {
           )}
         </div>
       </div>
+      {copyWarn && (
+        <CopyWarn
+          file={copyWarn}
+          onCancel={() => setCopyWarn(null)}
+          onConfirm={() => copyFile(copyWarn, { force: true })}
+        />
+      )}
     </section>
   );
 }

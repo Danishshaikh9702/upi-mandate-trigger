@@ -474,6 +474,47 @@ pre {
   max-height: 420px;
 }
 
+.modal-back {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(22, 17, 13, 0.55);
+}
+
+.modal {
+  width: min(480px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 24px 60px rgba(22, 17, 13, 0.28);
+}
+
+.modal h3 {
+  margin: 6px 0 10px;
+  font-family: Fraunces, serif;
+}
+
+.modal p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.modal .actions {
+  margin-top: 18px;
+}
+
+.modal .actions button.secondary {
+  border: 1px solid var(--line);
+  background: #fff8ee;
+  color: var(--ink);
+  cursor: pointer;
+}
+
 @media (max-width: 980px) {
   .shell,
   .timeline,
