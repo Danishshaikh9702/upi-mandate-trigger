@@ -1,6 +1,33 @@
 # upi-mandate-trigger
 
-UPI eNACH process for invoice creation and charge, plus local scripts that turn the BI presentation Excel into JSON payloads and find missed customers.
+UPI eNACH process for invoice creation and charge. You can run the same jobs from the **React UI** or from the **command line**. Both use `.env`, read Excel from `excel_file/`, and write the same output folders.
+
+## Two ways to run
+
+| | Command line | React UI |
+| --- | --- | --- |
+| Convert Excel | `.venv/bin/python convert_excel_to_json.py` | Convert Excel page |
+| Missed charges | `.venv/bin/python find_missed_upi_charges.py` | Missed charges page |
+| Missed invoices | `.venv/bin/python find_missed_upi_invoices.py` | Missed invoices page |
+| Output | Same folders on disk | Same folders, plus copy JSON to the dashboard |
+
+**Command line** (after `.env` and Excel are set):
+
+```bash
+.venv/bin/python convert_excel_to_json.py
+.venv/bin/python find_missed_upi_charges.py
+.venv/bin/python find_missed_upi_invoices.py
+```
+
+**UI** (API + built frontend):
+
+```bash
+.venv/bin/uvicorn api:app --port 8000
+```
+
+Open `http://127.0.0.1:8000`.
+
+Or for live UI reload: start the API, then `cd frontend && npm install && npm run dev` and open `http://localhost:5173`.
 
 ## Overview
 
@@ -175,11 +202,16 @@ These scripts sit in this repo. They read the BI presentation Excel from `excel_
 
 | Path | Purpose |
 | --- | --- |
-| `excel_file/` | Only place for the BI presentation Excel |
+| `excel_file/` | Current presentation Excel only (one file) |
+| `delete_excel_file/` | Previous Excel files moved here when a new file is uploaded |
 | `convert_excel_to_json.py` | Excel → JSON for the full list |
 | `find_missed_upi_charges.py` | Customers not charged on `CHARGE_SCHEDULED_ON` |
 | `find_missed_upi_invoices.py` | Customers without an invoice on `INVOICE_SCHEDULED_ON` |
 | `env_loader.py` | Loads `.env` and shared Excel / DB helpers |
+| `pipeline.py` | Shared convert / missed-charge / missed-invoice logic |
+| `api.py` | FastAPI backend for the React UI |
+| `frontend/` | React UI (Vite) |
+| `docs/screenshots/` | UI screenshots used in this README |
 | `.env` | Local config (not committed) |
 | `.env.example` | Sample config without secrets |
 | `requirements.txt` | Python packages |
@@ -207,6 +239,70 @@ cp .env.example .env
 ```
 
 Edit `.env` before the first run.
+
+### Frontend steps
+
+The React UI uses the same pipeline as the command-line scripts. Follow these steps, then use the screenshots below as a guide.
+
+1. Put one presentation Excel in `excel_file/` (for example `UPI_Presentation_17th_Sep.xlsx`).
+2. Copy `.env.example` to `.env` and set dates plus DB credentials.
+3. Install Python packages:
+
+```bash
+.venv/bin/pip install -r requirements.txt
+```
+
+4. Install frontend packages and build the UI:
+
+```bash
+cd frontend
+npm install
+npm run build
+```
+
+5. Start the API (this also serves the built UI):
+
+```bash
+.venv/bin/uvicorn api:app --port 8000
+```
+
+6. Open **http://127.0.0.1:8000**. You land on **Process**: T-2 invoice, T charge, T+1 reconcile.
+
+<img src="./docs/screenshots/01-process.png" alt="Step 6 Process page" width="900" />
+
+7. Open **Convert Excel**. Confirm the current file. Use **Replace Excel** if you have a new BI file. The old file moves to `delete_excel_file/`.
+
+<img src="./docs/screenshots/02-convert-excel.png" alt="Step 7 Convert Excel page" width="900" />
+
+8. Click **Run job**. You get Records, Batches, and a list of `batch_*.json` files. Each file has **Open** and **Copy**.
+
+<img src="./docs/screenshots/03-convert-result.png" alt="Step 8 Convert result with JSON files" width="900" />
+
+9. Click **Open** to view the JSON, then **Copy**, and paste it into the [dashboard](https://prod.zype.co.in/api/v1/dashboard/). Max 2500 IDs per file.
+
+<img src="./docs/screenshots/04-open-copy.png" alt="Step 9 Open and Copy JSON" width="900" />
+
+10. Open **Missed charges**, set the date, and click **Run job**. REJECTED and already-charged customers are skipped. Copy batches the same way.
+
+<img src="./docs/screenshots/05-missed-charges.png" alt="Step 10 Missed charges page" width="900" />
+
+11. Open **Missed invoices**, set the invoice date, and click **Run job**.
+
+<img src="./docs/screenshots/06-missed-invoices.png" alt="Step 11 Missed invoices page" width="900" />
+
+12. Open **Batches** any time to reopen earlier JSON files and **Copy** them again.
+
+<img src="./docs/screenshots/07-batches.png" alt="Step 12 Batches page" width="900" />
+
+For live UI reload during development, keep the API running and start Vite in another terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Then open `http://localhost:5173`.
 
 ### Configuration
 
@@ -311,5 +407,5 @@ WHERE DATE(scheduled_on) = 'YYYY-MM-DD';
 
 - Each run deletes and recreates its output folder.
 - `.env` is gitignored. Use `.env.example` as the template.
-- Keep the presentation Excel in `excel_file/` only. Do not put it in the project root or an output folder.
-- If a script says the Excel file was not found, check `UPI_EXCEL_FILE` and that `excel_file/UPI_Presentation_17th_Sep.xlsx` (or the new name) exists.
+- Keep only one presentation Excel in `excel_file/`. A new upload or a second file is moved to `delete_excel_file/`.
+- If a script says the Excel file was not found, put the `.xlsx` in `excel_file/`.
