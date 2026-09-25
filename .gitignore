@@ -1,0 +1,13 @@
+.venv/
+.env
+__pycache__/
+*.pyc
+upi_charge_payloads/
+missed_upi_charges/
+missed_upi_invoices/
+converted/
+missedupicharge/
+missedupienach/
+excel_file/*.xlsx
+excel_file/*.xls
+
