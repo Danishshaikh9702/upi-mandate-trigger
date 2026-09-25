@@ -1,3 +1,6 @@
 pandas
 pymysql
 openpyxl
+fastapi
+uvicorn
+python-multipart

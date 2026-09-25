@@ -2,6 +2,102 @@
 
 UPI eNACH process for invoice creation and charge. You can run the same jobs from the **React UI** or from the **command line**. Both use `.env`, read Excel from `excel_file/`, and write the same output folders.
 
+## Setup from scratch
+
+You need:
+
+- Git
+- Python 3.12 or later
+- Node.js 18 or later (for the React UI)
+- Network access to the payment-service MySQL replica (only for missed charge / missed invoice jobs)
+
+### 1. Clone the repo
+
+```bash
+git clone https://github.com/Danishshaikh9702/upi-mandate-trigger.git
+cd upi-mandate-trigger
+```
+
+### 2. Create a Python virtualenv and install packages
+
+```bash
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+```
+
+This installs `pandas`, `pymysql`, `openpyxl`, `fastapi`, and `uvicorn`.
+
+### 3. Create `.env`
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and set your values. Do not add `.xlsx` to the Excel name.
+
+```
+UPI_EXCEL_FILE=UPI_Presentation_17th_Sep
+CHARGE_SCHEDULED_ON=2026-09-26
+INVOICE_SCHEDULED_ON=2026-09-24
+DB_HOST=your-db-host
+DB_USER=your-db-user
+DB_PASSWORD=your-db-password
+DB_PORT=3306
+DB_NAME=payment_service
+```
+
+`.env` stays on your machine. It is not committed.
+
+### 4. Put the presentation Excel in `excel_file/`
+
+Keep only **one** `.xlsx` file there. The name must match `UPI_EXCEL_FILE` (without `.xlsx`).
+
+```bash
+# example: copy your BI file into the folder
+cp /path/to/UPI_Presentation_17th_Sep.xlsx excel_file/
+```
+
+If you later upload a new file from the UI, the old one is moved to `delete_excel_file/`.
+
+### 5. Install npm packages and build the UI
+
+```bash
+cd frontend
+npm install
+npm run build
+cd ..
+```
+
+### 6. Start the UI
+
+```bash
+.venv/bin/uvicorn api:app --port 8000
+```
+
+Open **http://127.0.0.1:8000**.
+
+### 7. Or run from the command line
+
+You can skip the UI and run the same jobs with Python:
+
+```bash
+.venv/bin/python convert_excel_to_json.py
+.venv/bin/python find_missed_upi_charges.py
+.venv/bin/python find_missed_upi_invoices.py
+```
+
+### Live UI reload (optional)
+
+If you are changing the React code, keep the API running, then in another terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open **http://localhost:5173**.
+
 ## Two ways to run
 
 | | Command line | React UI |
@@ -10,24 +106,6 @@ UPI eNACH process for invoice creation and charge. You can run the same jobs fro
 | Missed charges | `.venv/bin/python find_missed_upi_charges.py` | Missed charges page |
 | Missed invoices | `.venv/bin/python find_missed_upi_invoices.py` | Missed invoices page |
 | Output | Same folders on disk | Same folders, plus copy JSON to the dashboard |
-
-**Command line** (after `.env` and Excel are set):
-
-```bash
-.venv/bin/python convert_excel_to_json.py
-.venv/bin/python find_missed_upi_charges.py
-.venv/bin/python find_missed_upi_invoices.py
-```
-
-**UI** (API + built frontend):
-
-```bash
-.venv/bin/uvicorn api:app --port 8000
-```
-
-Open `http://127.0.0.1:8000`.
-
-Or for live UI reload: start the API, then `cd frontend && npm install && npm run dev` and open `http://localhost:5173`.
 
 ## Overview
 
@@ -226,41 +304,15 @@ Generated folders are recreated each run:
 
 ### Prerequisites
 
-- Python 3.12
+- Python 3.12 or later, plus Node.js 18 or later for the UI
 - Network access to the payment-service MySQL replica
 - Presentation Excel in `excel_file/`, with at least `customer_id` and `Final_nach_amount`
 
-### Setup
-
-```bash
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
-cp .env.example .env
-```
-
-Edit `.env` before the first run.
+Follow **Setup from scratch** at the top of this README for clone, `pip`, `npm`, `.env`, and first run.
 
 ### Frontend steps
 
-The React UI uses the same pipeline as the command-line scripts. Follow these steps, then use the screenshots below as a guide.
-
-1. Put one presentation Excel in `excel_file/` (for example `UPI_Presentation_17th_Sep.xlsx`).
-2. Copy `.env.example` to `.env` and set dates plus DB credentials.
-3. Install Python packages:
-
-```bash
-.venv/bin/pip install -r requirements.txt
-```
-
-4. Install frontend packages and build the UI:
-
-```bash
-cd frontend
-npm install
-npm run build
-```
-
-5. Start the API (this also serves the built UI):
+The React UI uses the same pipeline as the command-line scripts. After setup, start the API and use the screenshots below.
 
 ```bash
 .venv/bin/uvicorn api:app --port 8000
@@ -293,16 +345,6 @@ npm run build
 12. Open **Batches** any time to reopen earlier JSON files and **Copy** them again.
 
 <img src="./docs/screenshots/07-batches.png" alt="Step 12 Batches page" width="900" />
-
-For live UI reload during development, keep the API running and start Vite in another terminal:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Then open `http://localhost:5173`.
 
 ### Configuration
 

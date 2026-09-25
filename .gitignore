@@ -10,4 +10,9 @@ missedupicharge/
 missedupienach/
 excel_file/*.xlsx
 excel_file/*.xls
+delete_excel_file/*.xlsx
+delete_excel_file/*.xls
+frontend/node_modules/
+frontend/dist/
+scripts/node_modules/
 
