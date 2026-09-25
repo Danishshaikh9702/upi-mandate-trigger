@@ -74,9 +74,35 @@ cd ..
 .venv/bin/uvicorn api:app --port 8000
 ```
 
-Open **http://127.0.0.1:8000**.
+Open **http://127.0.0.1:8000**. You land on **Process**: T-2 invoice, T charge, T+1 reconcile.
 
-### 7. Or run from the command line
+<img src="./docs/screenshots/01-process.png" alt="Process page" width="900" />
+
+7. Open **Convert Excel**. Confirm the current file. Use **Replace Excel** if you have a new BI file. The old file moves to `delete_excel_file/`.
+
+<img src="./docs/screenshots/02-convert-excel.png" alt="Convert Excel page" width="900" />
+
+8. Click **Run job**. You get Records, Batches, and a list of `batch_*.json` files. Each file has **Open** and **Copy**.
+
+<img src="./docs/screenshots/03-convert-result.png" alt="Convert result with JSON files" width="900" />
+
+9. Click **Open** to view the JSON, then **Copy**, and paste it into the [dashboard](https://prod.zype.co.in/api/v1/dashboard/). Max 2500 IDs per file.
+
+<img src="./docs/screenshots/04-open-copy.png" alt="Open and Copy JSON" width="900" />
+
+10. Open **Missed charges**, set the date, and click **Run job**. REJECTED and already-charged customers are skipped. Copy batches the same way.
+
+<img src="./docs/screenshots/05-missed-charges.png" alt="Missed charges page" width="900" />
+
+11. Open **Missed invoices**, set the invoice date, and click **Run job**.
+
+<img src="./docs/screenshots/06-missed-invoices.png" alt="Missed invoices page" width="900" />
+
+12. Open **Batches** any time to reopen earlier JSON files and **Copy** them again.
+
+<img src="./docs/screenshots/07-batches.png" alt="Batches page" width="900" />
+
+### 13. Or run from the command line
 
 You can skip the UI and run the same jobs with Python:
 
@@ -308,43 +334,7 @@ Generated folders are recreated each run:
 - Network access to the payment-service MySQL replica
 - Presentation Excel in `excel_file/`, with at least `customer_id` and `Final_nach_amount`
 
-Follow **Setup from scratch** at the top of this README for clone, `pip`, `npm`, `.env`, and first run.
-
-### Frontend steps
-
-The React UI uses the same pipeline as the command-line scripts. After setup, start the API and use the screenshots below.
-
-```bash
-.venv/bin/uvicorn api:app --port 8000
-```
-
-6. Open **http://127.0.0.1:8000**. You land on **Process**: T-2 invoice, T charge, T+1 reconcile.
-
-<img src="./docs/screenshots/01-process.png" alt="Step 6 Process page" width="900" />
-
-7. Open **Convert Excel**. Confirm the current file. Use **Replace Excel** if you have a new BI file. The old file moves to `delete_excel_file/`.
-
-<img src="./docs/screenshots/02-convert-excel.png" alt="Step 7 Convert Excel page" width="900" />
-
-8. Click **Run job**. You get Records, Batches, and a list of `batch_*.json` files. Each file has **Open** and **Copy**.
-
-<img src="./docs/screenshots/03-convert-result.png" alt="Step 8 Convert result with JSON files" width="900" />
-
-9. Click **Open** to view the JSON, then **Copy**, and paste it into the [dashboard](https://prod.zype.co.in/api/v1/dashboard/). Max 2500 IDs per file.
-
-<img src="./docs/screenshots/04-open-copy.png" alt="Step 9 Open and Copy JSON" width="900" />
-
-10. Open **Missed charges**, set the date, and click **Run job**. REJECTED and already-charged customers are skipped. Copy batches the same way.
-
-<img src="./docs/screenshots/05-missed-charges.png" alt="Step 10 Missed charges page" width="900" />
-
-11. Open **Missed invoices**, set the invoice date, and click **Run job**.
-
-<img src="./docs/screenshots/06-missed-invoices.png" alt="Step 11 Missed invoices page" width="900" />
-
-12. Open **Batches** any time to reopen earlier JSON files and **Copy** them again.
-
-<img src="./docs/screenshots/07-batches.png" alt="Step 12 Batches page" width="900" />
+Follow **Setup from scratch** at the top of this README for clone, `pip`, `npm`, `.env`, UI screenshots, and first run.
 
 ### Configuration
 
